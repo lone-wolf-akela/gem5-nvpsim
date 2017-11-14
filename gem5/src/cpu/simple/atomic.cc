@@ -64,6 +64,7 @@
 #include "engy/state_machine.hh"
 #include "engy/two_thres.hh"
 #include "engy/DVFS.hh"
+#include "engy/DFS_LRY.hh"
 
 using namespace std;
 using namespace TheISA;
@@ -655,7 +656,7 @@ AtomicSimpleCPU::printAddr(Addr a)
 
 
 // two-threshold handler
-int
+/*int
 AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 {
     int rlt = 1;
@@ -678,7 +679,7 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
             rlt = 0;
     }
     return rlt;
-}
+}*/
 
 /*
 int
@@ -722,6 +723,109 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
     return rlt;
 }
 */
+
+//Msg handle for DFS_LRY
+int
+AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
+{
+	  const double energy_consumed_per_cycle_5 = 2.25;
+	  const double energy_consumed_per_cycle_4 = 1.5;
+	  const double energy_consumed_per_cycle_3 = 1;
+	  const double energy_consumed_per_cycle_2 = 0.5;
+	  const double energy_consumed_per_cycle_1 = 0.25;
+	  const double energy_consumed_poweron = 1;
+	  const int clockPeriod_to_poweron = 1;
+	  
+	  const double clock_mult_5 = 2.25;
+	  const double clock_mult_4 = 1.5;
+	  const double clock_mult_3 = 1;
+	  const double clock_mult_2 = 0.5;
+	  const double clock_mult_1 = 0.25;
+	  
+    int rlt = 1;
+    Tick lat = 0;
+    //const int CPU_Power = 0.160;
+
+    DPRINTF(EnergyMgmt, "[AtomicSimpleCPU-DFS_LRY] handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
+    switch(msg.type){
+        case (int) DFS_LRY::MsgType::POWEROFF:
+        	//关机
+        	  lat = tickEvent.when() - curTick();
+            if (in_interrupt)
+                lat_poweron = lat + clockPeriod() - lat % clockPeriod();
+            else
+                lat_poweron = 0;
+            deschedule(tickEvent);
+            break;
+        case (int) DFS_LRY::MsgType::POWERON:
+        	  //开机，直接进入最高能量状态
+        	  //调整频率
+            clkmult = clock_mult_5;
+        	  //调整耗能
+            energy_consumed_per_cycle = energy_consumed_per_cycle_5;
+            //开机惩罚耗能
+            consumeEnergy(
+              energy_consumed_poweron + 
+              energy_consumed_per_cycle * ticksToCycles(
+                lat_poweron + BaseCPU::getTotalLat()
+              )
+            );
+            //开机惩罚延时
+            schedule(tickEvent, 
+              curTick() + 
+              lat_poweron + 
+              BaseCPU::getTotalLat() + 
+              clockPeriod() * clockPeriod_to_poweron
+            );                      
+            break;
+            
+        case (int) DFS_LRY::MsgType::FREQ2to1:
+        	  //进入能耗等级：1
+        	  //调整频率
+            clkmult = clock_mult_1;
+        	  //调整耗能
+            energy_consumed_per_cycle = energy_consumed_per_cycle_1;             
+            break; 
+ 
+        case (int) DFS_LRY::MsgType::FREQ1to2:
+        case (int) DFS_LRY::MsgType::FREQ3to2:
+        	  //进入能耗等级：2
+        	  //调整频率
+            clkmult = clock_mult_2;
+        	  //调整耗能
+            energy_consumed_per_cycle = energy_consumed_per_cycle_2;             
+            break;
+         
+        case (int) DFS_LRY::MsgType::FREQ2to3:   
+        case (int) DFS_LRY::MsgType::FREQ4to3:
+        	  //进入能耗等级：3
+        	  //调整频率
+            clkmult = clock_mult_3;
+        	  //调整耗能
+            energy_consumed_per_cycle = energy_consumed_per_cycle_3;             
+            break;
+            
+        case (int) DFS_LRY::MsgType::FREQ3to4:
+        case (int) DFS_LRY::MsgType::FREQ5to4:
+        	  //进入能耗等级：4
+        	  //调整频率
+            clkmult = clock_mult_4;
+        	  //调整耗能
+            energy_consumed_per_cycle = energy_consumed_per_cycle_4;             
+            break;
+            
+        case (int) DFS_LRY::MsgType::FREQ4to5:
+        	  //进入能耗等级：5
+        	  //调整频率
+            clkmult = clock_mult_5;
+        	  //调整耗能
+            energy_consumed_per_cycle = energy_consumed_per_cycle_5;             
+            break;                                    
+        default:
+            rlt = 0;
+    }
+    return rlt;
+}
 
 int
 AtomicSimpleCPU::virtualDeviceDelay(Tick tick)

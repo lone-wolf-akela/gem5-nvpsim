@@ -56,6 +56,16 @@ class AtomicSimpleCPU : public BaseSimpleCPU
 
     virtual void init();
 
+		double clkmult = 1;
+    inline Tick clockPeriod() const
+    {
+        return ClockedObject::clockPeriod() * clkmult;
+    }
+    inline Cycles ticksToCycles(Tick t) const
+    {
+        return ClockedObject::ticksToCycles(t / clkmult);
+    }
+
   private:
 
     struct TickEvent : public Event
