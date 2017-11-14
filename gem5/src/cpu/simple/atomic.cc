@@ -111,7 +111,24 @@ AtomicSimpleCPU::init()
 }
 
 AtomicSimpleCPU::AtomicSimpleCPU(AtomicSimpleCPUParams *p)
-    : BaseSimpleCPU(p), tickEvent(this), width(p->width), locked(false),
+    : BaseSimpleCPU(p),
+    	
+    	energy_consumed_per_cycle_5(p->energy_consumed_per_cycle_5),
+      energy_consumed_per_cycle_4(p->energy_consumed_per_cycle_4),
+      energy_consumed_per_cycle_3(p->energy_consumed_per_cycle_3),
+      energy_consumed_per_cycle_2(p->energy_consumed_per_cycle_2),
+      energy_consumed_per_cycle_1(p->energy_consumed_per_cycle_1),
+	  
+      energy_consumed_poweron(p->energy_consumed_poweron),  
+      clockPeriod_to_poweron(p->clockPeriod_to_poweron),
+	  
+      clock_mult_5(p->clock_mult_5),
+      clock_mult_4(p->clock_mult_4),
+      clock_mult_3(p->clock_mult_3),
+      clock_mult_2(p->clock_mult_2),
+      clock_mult_1(p->clock_mult_1),
+      
+    	tickEvent(this), width(p->width), locked(false),
       simulate_data_stalls(p->simulate_data_stalls),
       simulate_inst_stalls(p->simulate_inst_stalls),
       drain_manager(NULL),
@@ -728,21 +745,7 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 int
 AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 {
-	  const double energy_consumed_per_cycle_5 = 2.25;
-	  const double energy_consumed_per_cycle_4 = 1.5;
-	  const double energy_consumed_per_cycle_3 = 1;
-	  const double energy_consumed_per_cycle_2 = 0.5;
-	  const double energy_consumed_per_cycle_1 = 0.25;
-	  const double energy_consumed_poweron = 1;
-	  const int clockPeriod_to_poweron = 1;
-	  
-	  const double clock_mult_5 = 2.25;
-	  const double clock_mult_4 = 1.5;
-	  const double clock_mult_3 = 1;
-	  const double clock_mult_2 = 0.5;
-	  const double clock_mult_1 = 0.25;
-	  
-    int rlt = 1;
+	  int rlt = 1;
     Tick lat = 0;
     //const int CPU_Power = 0.160;
 

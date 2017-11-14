@@ -24,11 +24,26 @@ system.energy_mgmt.state_machine = DFS_LRY(thres_off = 500,
 system.energy_mgmt.capacity = 1;	#uF
 ###
 
-system.cpu = AtomicSimpleCPU()
+#set some parameters for the CPU
+system.cpu = AtomicSimpleCPU(energy_consumed_per_cycle_5 = 2.25/100,
+                             energy_consumed_per_cycle_4 = 1.5/100,
+                             energy_consumed_per_cycle_3 = 1/100,
+                             energy_consumed_per_cycle_2 = 0.5/100,
+                             energy_consumed_per_cycle_1 = 0.25/100,
+	  
+                             energy_consumed_poweron = 1/100,  
+                             clockPeriod_to_poweron = 1/100,
+	  
+                             clock_mult_5 = 1/2.25,
+                             clock_mult_4 = 1/1.5,
+                             clock_mult_3 = 1,
+                             clock_mult_2 = 1/0.5,
+                             clock_mult_1 = 1/0.25)
 
 #add by LiuRuoyang
-#no more than 4000?
-system.cpu.max_insts_any_thread = 3000
+#Attention: There's a limit that we can only simulate 18446744073709551615 ticks
+#or the simulator will say: "Exiting @ tick 18446744073709551615 because simulate() limit reached"
+system.cpu.max_insts_any_thread = 4000
 ###
 
 system.cpu.s_energy_port = system.energy_mgmt.m_energy_port
@@ -49,7 +64,7 @@ system.system_port = system.membus.slave
 system.vdev1 = VirtualDevice()
 system.vdev1.cpu = system.cpu
 system.vdev1.range = system.vdev_ranges[0]
-system.vdev1.energy_consumed_per_cycle_vdev = [Float(0), Float(0.25*100), Float(1.75*100)] # The energy consumption of each cycle at power-off, idle and active mode.
+system.vdev1.energy_consumed_per_cycle_vdev = [Float(0), Float(0.25*10), Float(1.75*10)] # The energy consumption of each cycle at power-off, idle and active mode.
 system.vdev1.delay_self = '10ms'
 system.vdev1.delay_cpu_interrupt = '100us'
 system.vdev1.delay_set = '200us'
@@ -61,7 +76,7 @@ system.vdev1.s_energy_port = system.energy_mgmt.m_energy_port
 system.vdev2 = VirtualDevice()
 system.vdev2.cpu = system.cpu
 system.vdev2.range = system.vdev_ranges[1]
-system.vdev2.energy_consumed_per_cycle_vdev = [Float(0), Float(0.5*100), Float(1.5*100)] # The energy consumption of each cycle at power-off, idle and active mode.
+system.vdev2.energy_consumed_per_cycle_vdev = [Float(0), Float(0.5*10), Float(1.5*10)] # The energy consumption of each cycle at power-off, idle and active mode.
 system.vdev2.delay_self = '10ms'
 system.vdev2.delay_cpu_interrupt = '100us'
 system.vdev2.delay_set = '200us'
@@ -73,7 +88,7 @@ system.vdev2.s_energy_port = system.energy_mgmt.m_energy_port
 system.vdev3 = VirtualDevice()
 system.vdev3.cpu = system.cpu
 system.vdev3.range = system.vdev_ranges[2]
-system.vdev3.energy_consumed_per_cycle_vdev = [Float(0), Float(0.1*100), Float(3.0*100)] # The energy consumption of each cycle at power-off, idle and active mode.
+system.vdev3.energy_consumed_per_cycle_vdev = [Float(0), Float(0.1*10), Float(3.0*10)] # The energy consumption of each cycle at power-off, idle and active mode.
 system.vdev3.delay_self = '100us'
 system.vdev3.delay_cpu_interrupt = '100us'
 system.vdev3.delay_set = '200us'
