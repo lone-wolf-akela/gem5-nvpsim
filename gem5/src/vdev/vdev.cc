@@ -7,6 +7,8 @@
 #include "debug/EnergyMgmt.hh"
 #include "debug/VirtualDevice.hh"
 #include "debug/MemoryAccess.hh"
+#include "engy/DVFS.hh"
+#include "engy/DFS_LRY.hh"
 
 VirtualDevice::DevicePort::DevicePort(const std::string &_name, VirtualDevice *_vdev)
     : SlavePort(_name, _vdev), vdev(_vdev)
@@ -171,12 +173,50 @@ VirtualDevice::tick()
     //schedule(tickEvent, curTick() + 1);
 }
 
+//int
+//VirtualDevice::handleMsg(const EnergyMsg &msg)
+//{
+//    DPRINTF(EnergyMgmt, "Device handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
+//    switch(msg.type) {
+//        case (int) SimpleEnergySM::POWEROFF:
+//            /** Vdev shutdown **/
+//            execution_state = STATE_POWEROFF;
+//            if (*pmem & VDEV_WORK) {
+//                /* This should be handled if the device is on a task **/
+//                assert(event_interrupt.scheduled());
+//                DPRINTF(VirtualDevice, "device power off occurs in the middle of a task at %lu\n", curTick());
+//
+//                /* Calculate the remaining delay if the device is interruptable */
+//                if (is_interruptable)
+//                    delay_remained = event_interrupt.when() - curTick();
+//                else
+//                    delay_remained = delay_set + delay_self;
+//                deschedule(event_interrupt);
+//            }
+//            break;
+//        case (int) SimpleEnergySM::POWERON:
+//            /** Vdev shutdown **/
+//            execution_state = STATE_ACTIVE;
+//            if (*pmem & VDEV_WORK) {
+//                assert(!event_interrupt.scheduled());
+//                DPRINTF(VirtualDevice, "device power on to finish a task at %lu\n", curTick());
+//                schedule(event_interrupt, curTick() + delay_remained);
+//                /** Energy consumption **/
+//                consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
+//            }
+//            break;
+//        default:
+//            return 0;
+//    }
+//    return 1;
+//}
+
 int
 VirtualDevice::handleMsg(const EnergyMsg &msg)
 {
     DPRINTF(EnergyMgmt, "Device handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
     switch(msg.type) {
-        case (int) SimpleEnergySM::POWEROFF:
+        case (int) DFS_LRY::MsgType::POWEROFF:
             /** Vdev shutdown **/
             execution_state = STATE_POWEROFF;
             if (*pmem & VDEV_WORK) {
@@ -192,7 +232,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
                 deschedule(event_interrupt);
             }
             break;
-        case (int) SimpleEnergySM::POWERON:
+        case (int) DFS_LRY::MsgType::POWERON:
             /** Vdev shutdown **/
             execution_state = STATE_ACTIVE;
             if (*pmem & VDEV_WORK) {
