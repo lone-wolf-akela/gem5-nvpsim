@@ -8,6 +8,7 @@
 #include "engy/harvest.hh"
 #include "debug/EnergyMgmt.hh"
 #include "sim/eventq.hh"
+#include "engy/DFS_LRY.hh"
 
 EnergyMgmt::EnergyMgmt(const Params *p)
         : SimObject(p),
@@ -68,8 +69,11 @@ int EnergyMgmt::consumeEnergy(double val)
     } else {
         energy_remained = harvest_module->energy_harvest(-val, energy_remained);
         harv_unit = -val;
-        //energy leakage!
-        energy_remained -= energy_consumed_per_harvest;
+        if(poweron)
+        {
+		        //energy leakage!
+		        energy_remained -= energy_consumed_per_harvest;
+      	}
         if (energy_remained > higher_bound) {
             harv_unit -= (energy_remained - higher_bound);
             energy_remained = higher_bound;
@@ -107,6 +111,14 @@ int EnergyMgmt::broadcastMsgAsEvent(const EnergyMsg &msg)
 
 int EnergyMgmt::handleMsg(const EnergyMsg &msg)
 {
+		if(msg.type == DFS_LRY::MsgType::POWEROFF)
+		{
+				poweron = false;
+		}
+		else if(msg.type == DFS_LRY::MsgType::POWERON)
+		{
+				poweron = true;	
+		}
     /* msg type should be 0 here, for 0 represents energy consuming, */
     /* and EnergyMgmt module can only handle energy consuming msg*/
     if (msg.type)

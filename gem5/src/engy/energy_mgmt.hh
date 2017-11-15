@@ -29,6 +29,7 @@ public:
     int handleMsg(const EnergyMsg &msg);
 
 		double energy_consumed_per_harvest;
+		bool poweron = true;
 protected:
     Tick time_unit;
     double energy_remained;
