@@ -136,7 +136,7 @@ AtomicSimpleCPU::AtomicSimpleCPU(AtomicSimpleCPUParams *p)
       dcachePort(name() + ".dcache_port", this),
       fastmem(p->fastmem), dcache_access(false), dcache_latency(0),
       vdev_set(false), vdev_set_latency(0),
-      ppCommit(nullptr), energy_consumed_per_cycle(1),
+      ppCommit(nullptr), energy_consumed_per_cycle(0),
       in_interrupt(0)
 {
     _status = Idle;
@@ -751,15 +751,44 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 
     DPRINTF(EnergyMgmt, "[AtomicSimpleCPU-DFS_LRY] handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
     switch(msg.type){
-        case (int) DFS_LRY::MsgType::POWEROFF:
-        	//关机
-        	  lat = tickEvent.when() - curTick();
-            if (in_interrupt)
-                lat_poweron = lat + clockPeriod() - lat % clockPeriod();
-            else
-                lat_poweron = 0;
+    		case (int) DFS_LRY::MsgType::RETENTION_BEG:
+    				//进入RETENTION状态，事实上要做的就是POWEROFF要做的事。
+    				//因为RETENTION和POWEROFF最大的区别只是开机没惩罚而已。
+    				lat = tickEvent.when() - curTick();           
+            lat_poweron = lat + clockPeriod() - lat % clockPeriod();
             deschedule(tickEvent);
+    				break;
+    				
+        case (int) DFS_LRY::MsgType::POWEROFF:
+        		//关机
+        		//该做的事实际上大部分在进入RETENTION时已经做了
+        		
+        		//仅有的一次例外是整个simulate刚开始时，会经历一次poweroff，这次是不会先retention的
+        		if(tickEvent.scheduled())
+						{
+							DPRINTF(EnergyMgmt, "[AtomicSimpleCPU-DFS_LRY] handleMsg called at %lu, msg.type=%d. This is the initialization poweroff.\n", curTick(), msg.type);
+							lat = tickEvent.when() - curTick();           
+            	lat_poweron = lat + clockPeriod() - lat % clockPeriod();
+            	deschedule(tickEvent);
+						} 
+						       		
+        		if (!in_interrupt)
+        		{
+        			lat_poweron = 0;
+        		}        			
             break;
+            
+        case (int) DFS_LRY::MsgType::RETENTION_END:
+    				//从RETENTION状态恢复工作，进入最高能量状态
+    				//但是和POWERON不同的是没有额外的开机惩罚
+    				//调整频率
+            clkmult = clock_mult_5;
+        	  //调整耗能
+            energy_consumed_per_cycle = energy_consumed_per_cycle_5;
+            //开机
+            schedule(tickEvent, curTick() + lat_poweron);                      
+    				break;  
+    				  
         case (int) DFS_LRY::MsgType::POWERON:
         	  //开机，直接进入最高能量状态
         	  //调整频率

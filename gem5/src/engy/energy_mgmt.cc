@@ -11,6 +11,7 @@
 
 EnergyMgmt::EnergyMgmt(const Params *p)
         : SimObject(p),
+        	energy_consumed_per_harvest(p->energy_consumed_per_harvest),
           time_unit(p->energy_time_unit),
           energy_remained(0),
           event_msg(this, false, Event::Energy_Pri),
@@ -67,9 +68,14 @@ int EnergyMgmt::consumeEnergy(double val)
     } else {
         energy_remained = harvest_module->energy_harvest(-val, energy_remained);
         harv_unit = -val;
+        //energy leakage!
+        energy_remained -= energy_consumed_per_harvest;
         if (energy_remained > higher_bound) {
             harv_unit -= (energy_remained - higher_bound);
             energy_remained = higher_bound;
+        }
+        if (energy_remained < lower_bound) {
+            energy_remained = lower_bound;
         }
         DPRINTF(EnergyMgmt, "[EngyMgmt] Energy %lf is harvested. Energy remained: %lf\n", harv_unit, energy_remained);
     }

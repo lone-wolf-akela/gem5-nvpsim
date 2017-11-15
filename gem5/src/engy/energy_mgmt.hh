@@ -28,6 +28,7 @@ public:
     int broadcastMsgAsEvent(const EnergyMsg &msg);
     int handleMsg(const EnergyMsg &msg);
 
+		double energy_consumed_per_harvest;
 protected:
     Tick time_unit;
     double energy_remained;
