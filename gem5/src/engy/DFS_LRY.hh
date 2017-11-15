@@ -21,11 +21,12 @@ public:
     enum State {
         STATE_INIT = 0,
         STATE_POWEROFF = 1,
-        STATE_FREQ1 = 2,
-        STATE_FREQ2 = 3,
-        STATE_FREQ3 = 4,
-        STATE_FREQ4 = 5,
-        STATE_FREQ5 = 6,
+        STATE_RETENTION = 2,
+        STATE_FREQ1 = 3,
+        STATE_FREQ2 = 4,
+        STATE_FREQ3 = 5,
+        STATE_FREQ4 = 6,
+        STATE_FREQ5 = 7,
     };
 
     enum MsgType {
@@ -40,11 +41,14 @@ public:
         FREQ4to3 = 8,
         FREQ3to2 = 9,
         FREQ2to1 = 10,
+        RETENTION_BEG = 11,
+        RETENTION_END = 12
     };
 
 protected:
     State state;
     double thres_off;
+    double thres_retention;
 		double thres_2;
 		double thres_3;
 		double thres_4;

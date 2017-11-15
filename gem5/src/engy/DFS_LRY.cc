@@ -5,6 +5,7 @@ DFS_LRY::DFS_LRY(const Params *p)
     : BaseEnergySM(p), 
     	state(DFS_LRY::State::STATE_INIT),
       thres_off(p->thres_off), 
+      thres_retention(p->thres_retention), 
       thres_2(p->thres_2),
       thres_3(p->thres_3),
       thres_4(p->thres_4),
@@ -99,6 +100,24 @@ void DFS_LRY::update(double _energy)
         broadcastMsg(msg);
     }
 
+//beg retention
+    else if (state == STATE_FREQ1 && _energy < thres_retention)
+    {
+        DPRINTF(EnergyMgmt, "State change: STATE_FREQ1->STATE_RETENTION state=%d, _energy=%lf, thres_retention=%lf\n", state, _energy, thres_retention);
+        state = STATE_RETENTION;
+        msg.type = MsgType::RETENTION_BEG;
+        broadcastMsg(msg);
+    }
+    
+//end retention
+		else if (state == STATE_RETENTION && _energy > thres_5)
+    {
+        DPRINTF(EnergyMgmt, "State change: STATE_RETENTION->STATE_FREQ5 state=%d, _energy=%lf, thres_5=%lf\n", state, _energy, thres_5);
+        state = STATE_FREQ5;
+        msg.type = MsgType::RETENTION_END;
+        broadcastMsg(msg);
+    }
+    
 //power on 
     else if (state == STATE_POWEROFF && _energy > thres_5)
     {
@@ -109,9 +128,9 @@ void DFS_LRY::update(double _energy)
     }
 
 //pwoer off
-    else if (state == STATE_FREQ1 && _energy < thres_off)
+    else if (state == STATE_RETENTION && _energy < thres_off)
     {
-        DPRINTF(EnergyMgmt, "State change: STATE_FREQ1->STATE_POWEROFF state=%d, _energy=%lf, thres_off=%lf\n", state, _energy, thres_off);
+        DPRINTF(EnergyMgmt, "State change: STATE_RETENTION->STATE_POWEROFF state=%d, _energy=%lf, thres_off=%lf\n", state, _energy, thres_off);
         state = STATE_POWEROFF;
         msg.type = MsgType::POWEROFF;
         broadcastMsg(msg);

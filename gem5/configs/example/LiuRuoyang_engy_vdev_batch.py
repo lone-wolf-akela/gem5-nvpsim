@@ -1,6 +1,11 @@
 import m5
 from m5.objects import *
 
+import sys  
+cap = float(sys.argv[1])/10
+
+
+
 system = System()
 system.clk_domain = SrcClockDomain()
 system.clk_domain.clock = '1MHz'
@@ -22,7 +27,7 @@ system.energy_mgmt.state_machine = DFS_LRY(thres_off = 1000,
                                            thres_3 = 7500,
                                            thres_4 = 15000,
                                            thres_5 = 20000)
-system.energy_mgmt.capacity = 2;	#uF
+system.energy_mgmt.capacity = cap;	#uF
 system.energy_mgmt.energy_consumed_per_harvest = 0.02; 
 ###
 
@@ -107,6 +112,10 @@ system.cpu.createThreads()
 root = Root(full_system = False, system = system)
 m5.instantiate()
 
-print "Beginning simulation!"
+print "Beginning simulation! cap: %f" %cap
 exit_event = m5.simulate()
 print 'Exiting @ tick %i because %s' % (m5.curTick(), exit_event.getCause())
+
+f = open("m5out/batch_res.csv","a")
+f.write("%f,%i,%s\n" % (cap, m5.curTick(), exit_event.getCause()))
+f.close()
