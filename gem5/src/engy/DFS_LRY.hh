@@ -47,11 +47,17 @@ public:
 
 protected:
     State state;
-    double thres_off;
-    double thres_retention;
-		double thres_2;
-		double thres_3;
-		double thres_4;
-		double thres_5;
+    double thres_5_to_4;
+    double thres_4_to_3;
+    double thres_3_to_2;
+    double thres_2_to_1;
+    double thres_1_to_retention;
+    double thres_retention_to_off;
+    double thres_off_to_1;
+    double thres_retention_to_1;
+		double thres_1_to_2;
+		double thres_2_to_3;
+		double thres_3_to_4;
+		double thres_4_to_5;
 };
 #endif //GEM5_TWO_THRES_HH

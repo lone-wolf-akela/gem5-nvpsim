@@ -10,6 +10,8 @@
 #include "engy/DVFS.hh"
 #include "engy/DFS_LRY.hh"
 
+#include <fstream>
+
 VirtualDevice::DevicePort::DevicePort(const std::string &_name, VirtualDevice *_vdev)
     : SlavePort(_name, _vdev), vdev(_vdev)
 {
@@ -59,6 +61,7 @@ VirtualDevice::VirtualDevice(const Params *p)
     : MemObject(p),
       id(0),
       port(name() + ".port", this),
+      need_log(p->need_log),
       cpu(p->cpu),
       range(p->range),
       delay_set(p->delay_set),
@@ -132,6 +135,17 @@ VirtualDevice::access(PacketPtr pkt)
                     /* Request succeeds. */
                     execution_state = STATE_ACTIVE; // The virtual device enter/keep in the active status.
                     DPRINTF(VirtualDevice, "Virtual Device starts working.\n");
+                    
+                    /* 统计设备访问次数 */
+                    if (need_log)
+                    {
+                    	access_time++;
+                    	std::ofstream fout("m5out/devicedata");
+                    	assert(fout);
+                    	fout << access_time << std::endl;
+                    	fout.close();
+                  	}
+                    
                     /* Set the virtual device to working mode */
                     *pmem |= VDEV_WORK;
                     *pmem &= ~VDEV_FINISH;
