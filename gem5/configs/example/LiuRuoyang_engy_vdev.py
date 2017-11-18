@@ -16,14 +16,24 @@ system.vaddr_vdev_ranges = [AddrRange('1000MB', '1000MB'), AddrRange('1001MB', '
 
 #energy mgmt
 system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/energy_prof', energy_time_unit = '10us')
-system.energy_mgmt.state_machine = DFS_LRY(thres_off = 1000,
-                                           thres_retention = 2500,
-                                           thres_2 = 5000, 
-                                           thres_3 = 7500,
-                                           thres_4 = 15000,
-                                           thres_5 = 20000)
+system.energy_mgmt.state_machine = DFS_LRY()
+system.energy_mgmt.state_machine.thres_5_to_4 = 20000
+system.energy_mgmt.state_machine.thres_4_to_3 = 15000
+system.energy_mgmt.state_machine.thres_3_to_2 = 7500
+system.energy_mgmt.state_machine.thres_2_to_1 = 5000
+system.energy_mgmt.state_machine.thres_1_to_retention = 2500
+system.energy_mgmt.state_machine.thres_retention_to_off = 1000
+system.energy_mgmt.state_machine.thres_off_to_1 = 3000
+system.energy_mgmt.state_machine.thres_retention_to_1 = 2500
+system.energy_mgmt.state_machine.thres_1_to_2 = 5000
+system.energy_mgmt.state_machine.thres_2_to_3 = 7500
+system.energy_mgmt.state_machine.thres_3_to_4 = 15000
+system.energy_mgmt.state_machine.thres_4_to_5 = 20000
+
+
 system.energy_mgmt.capacity = 2;	#uF
 system.energy_mgmt.energy_consumed_per_harvest = 0.02; 
+system.energy_mgmt.energy_profile_mult = 2; 
 ###
 
 #set some parameters for the CPU
@@ -41,12 +51,6 @@ system.cpu = AtomicSimpleCPU(energy_consumed_per_cycle_5 = 2.25/100,
                              clock_mult_3 = 1,
                              clock_mult_2 = 1/0.5,
                              clock_mult_1 = 1/0.25)
-
-#add by LiuRuoyang
-#Attention: There's a limit that we can only simulate 18446744073709551615 ticks
-#or the simulator will say: "Exiting @ tick 18446744073709551615 because simulate() limit reached"
-system.cpu.max_insts_any_thread = 400000
-###
 
 system.cpu.s_energy_port = system.energy_mgmt.m_energy_port
 
@@ -99,6 +103,8 @@ system.vdev3.is_interruptable = 0
 system.vdev3.port = system.membus.master
 system.vdev3.s_energy_port = system.energy_mgmt.m_energy_port
 
+system.vdev3.need_log = 1
+
 process = LiveProcess()
 process.cmd = ['tests/test-progs/brgMonitor/main_trans']
 system.cpu.workload = process
@@ -108,5 +114,12 @@ root = Root(full_system = False, system = system)
 m5.instantiate()
 
 print "Beginning simulation!"
-exit_event = m5.simulate()
+exit_event = m5.simulate(int(0.2 * 1000000000000))
 print 'Exiting @ tick %i because %s' % (m5.curTick(), exit_event.getCause())
+
+
+fi = open("m5out/devicedata","r")
+line = fi.readline()
+vdev_access = int(line)
+print "vdev3 access: %i" % vdev_access
+fi.close()

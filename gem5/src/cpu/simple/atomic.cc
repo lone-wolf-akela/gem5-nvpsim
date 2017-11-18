@@ -779,22 +779,22 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
             break;
             
         case (int) DFS_LRY::MsgType::RETENTION_END:
-    				//从RETENTION状态恢复工作，进入最高能量状态
+    				//从RETENTION状态恢复工作，进入Freq Lv1
     				//但是和POWERON不同的是没有额外的开机惩罚
     				//调整频率
-            clkmult = clock_mult_5;
+            clkmult = clock_mult_1;
         	  //调整耗能
-            energy_consumed_per_cycle = energy_consumed_per_cycle_5;
+            energy_consumed_per_cycle = energy_consumed_per_cycle_1;
             //开机
             schedule(tickEvent, curTick() + lat_poweron);                      
     				break;  
     				  
         case (int) DFS_LRY::MsgType::POWERON:
-        	  //开机，直接进入最高能量状态
+        	  //开机，进入Freq Lv1
         	  //调整频率
-            clkmult = clock_mult_5;
+            clkmult = clock_mult_1;
         	  //调整耗能
-            energy_consumed_per_cycle = energy_consumed_per_cycle_5;
+            energy_consumed_per_cycle = energy_consumed_per_cycle_1;
             //开机惩罚耗能
             consumeEnergy(
               energy_consumed_poweron + 
