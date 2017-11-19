@@ -1,8 +1,8 @@
-rm m5out/batch_res.csv
+#rm m5out/batch_res.csv
 
-for energy in {1..50}
+for energy in {20..20}
 do
-	for cap in {1..50}
+	for cap in {101..1000}
 	do
 		echo "========================================================="
 		echo "cap: $cap; energy: $energy"
