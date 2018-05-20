@@ -1,7 +1,16 @@
 Import('*')
 
+Source('./circnn_sim/BFU2.cpp')
+Source('./circnn_sim/BFUMUL2.cpp')
+Source('./circnn_sim/FFT_controller.cpp')
+Source('./circnn_sim/FFT128.cpp')
+Source('./circnn_sim/main.cpp')
+Source('./circnn_sim/mem_hub.cpp')
+Source('./circnn_sim/PE.cpp')
+Source('./circnn_sim/PE_array.cpp')
+Source('./circnn_sim/PE_controller.cpp')
+Source('./circnn_sim/simulator.cpp')
 Source('vdev.cc')
-
 SimObject('VirtualDevice.py')
 
 DebugFlag('VirtualDevice')

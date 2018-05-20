@@ -13,6 +13,8 @@
 #include "cpu/base.hh"
 #include "params/VirtualDevice.hh"
 
+#include "./circnn_sim/main.h"
+
 class VirtualDevice : public MemObject
 {
 protected:
@@ -41,6 +43,8 @@ private:
     DevicePort port;
 
 public:
+		CirCNN circnn;
+
 
     typedef VirtualDeviceParams Params;
     const Params *params() const
@@ -84,7 +88,6 @@ public:
         STATE_ACTIVE = 2
     };
 
-		bool need_log;
 		int access_time = 0;
 protected:
 
@@ -106,7 +109,8 @@ protected:
     /** When power off, time is remained for the task */
     Tick delay_remained;
     /** Energy consumption in different states : **/
-    double energy_consumed_per_cycle_vdev[3] = {0, 0.25*1000, 1.75*1000};
+    //double energy_consumed_per_cycle_vdev;
+    double energy_need;
     /** Execution states of vdev : [OFF, IDLE, ACTIVE]; **/
     State execution_state = STATE_POWEROFF;
 

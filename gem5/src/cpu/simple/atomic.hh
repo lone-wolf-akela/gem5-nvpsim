@@ -56,21 +56,12 @@ class AtomicSimpleCPU : public BaseSimpleCPU
 
     virtual void init();
 
-		double energy_consumed_per_cycle_5;
-	  double energy_consumed_per_cycle_4;
-	  double energy_consumed_per_cycle_3;
-	  double energy_consumed_per_cycle_2;
-	  double energy_consumed_per_cycle_1;
+		double energy_consumed_per_cycle;
 	  
+	  double energy_consumed_poweroff;
 	  double energy_consumed_poweron;  
 	  int clockPeriod_to_poweron;
-	  
-	  double clock_mult_5;
-	  double clock_mult_4;
-	  double clock_mult_3;
-	  double clock_mult_2;
-	  double clock_mult_1;
-	  
+	  	  
 		double clkmult = 1;
     inline Tick clockPeriod() const
     {
@@ -251,8 +242,6 @@ class AtomicSimpleCPU : public BaseSimpleCPU
     virtual int virtualDeviceInterrupt(Tick tick);
     virtual int virtualDeviceDelay(Tick tick);
     virtual int virtualDeviceSet(Tick tick);
-
-    double energy_consumed_per_cycle;
 
     bool in_interrupt;
 };
