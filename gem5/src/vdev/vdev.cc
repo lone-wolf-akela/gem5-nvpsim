@@ -7,10 +7,10 @@
 #include "debug/EnergyMgmt.hh"
 #include "debug/VirtualDevice.hh"
 #include "debug/MemoryAccess.hh"
-#include "engy/DVFS.hh"
-#include "engy/DFS_LRY.hh"
+//#include "engy/DVFS.hh"
+#include "engy/two_thres.hh"
 
-#include <fstream>
+//#include <fstream>
 
 VirtualDevice::DevicePort::DevicePort(const std::string &_name, VirtualDevice *_vdev)
     : SlavePort(_name, _vdev), vdev(_vdev)
@@ -61,24 +61,19 @@ VirtualDevice::VirtualDevice(const Params *p)
     : MemObject(p),
       id(0),
       port(name() + ".port", this),
-      need_log(p->need_log),
       cpu(p->cpu),
       range(p->range),
       delay_set(p->delay_set),
-      delay_self(p->delay_self),
-      delay_recover(p->delay_recover),
+      //delay_self(p->delay_self),
+      //delay_recover(p->delay_recover),
       delay_cpu_interrupt(p->delay_cpu_interrupt),
       is_interruptable(p->is_interruptable),
-      delay_remained(p->delay_remained + p->delay_recover),
+      //delay_remained(p->delay_remained + p->delay_recover),
       event_interrupt(this, false, Event::Virtual_Interrupt)
 {
     trace.resize(0);
     pmem = (uint8_t*) malloc(range.size() * sizeof(uint8_t));
     memset(pmem, 0, range.size() * sizeof(uint8_t));
-    
-    energy_consumed_per_cycle_vdev[0] = p->energy_consumed_per_cycle_vdev[0];
-    energy_consumed_per_cycle_vdev[1] = p->energy_consumed_per_cycle_vdev[1];
-    energy_consumed_per_cycle_vdev[2] = p->energy_consumed_per_cycle_vdev[2];
 }
 
 void
@@ -100,18 +95,47 @@ VirtualDevice::init()
 void
 VirtualDevice::triggerInterrupt()
 {
-    /* Todo: add static of finish success. */
-    DPRINTF(VirtualDevice, "Virtual device triggers an interrupt.\n");
-    execution_state = STATE_IDLE; // The virtual device enter/keep in the active status.
-    finishSuccess();
-    assert(*pmem & VDEV_WORK);
-    /* Change register byte. */
-    *pmem |= VDEV_FINISH;
-    *pmem &= ~VDEV_WORK;
+		if(circnn.finished)
+		{
+	    /* Todo: add static of finish success. */
+	    DPRINTF(VirtualDevice, "Virtual device triggers an interrupt.\n");
+	    execution_state = STATE_IDLE; // The virtual device enter/keep in the active status.
+	    finishSuccess();
+	    assert(*pmem & VDEV_WORK);
+	    /* Change register byte. */
+	    *pmem |= VDEV_FINISH;
+	    *pmem &= ~VDEV_WORK;
 
-    /* Tell cpu. */
-    cpu->virtualDeviceInterrupt(delay_cpu_interrupt);
-    cpu->virtualDeviceEnd(id);
+	    /* Tell cpu. */
+	    cpu->virtualDeviceInterrupt(delay_cpu_interrupt);
+	    cpu->virtualDeviceEnd(id);    
+	    
+	    //output result
+	    uint8_t *current_pointer = pmem + 1;
+	    for(size_t i=0;i<circnn.Result.size();i++)
+	    {
+	    	memcpy( current_pointer,
+	    			circnn.Result[i].data(),
+	    			sizeof(double) * circnn.Result[i].size()
+	    		);
+	    	current_pointer += sizeof(double) * circnn.Result[i].size();
+	  	}
+	  }
+	  else //not finished, run next inst
+	  {
+	  	/* Schedule interrupt. */
+      std::pair<double,double> time_energy = circnn.Run();
+      delay_self = time_energy.first;
+      energy_need = time_energy.second;
+      schedule(event_interrupt, curTick() + delay_self);
+      /* Energy consumption. */
+      DPRINTF(VirtualDevice, "Next Inst, Need Ticks:%i, Cycles:%i, Energy: %lf .\n", 
+      	delay_self, 
+      	ticksToCycles(delay_self), 
+      	time_energy.second
+      );
+      consumeEnergy(energy_need);
+	  }
 }
 
 Tick
@@ -134,30 +158,23 @@ VirtualDevice::access(PacketPtr pkt)
                 } else {
                     /* Request succeeds. */
                     execution_state = STATE_ACTIVE; // The virtual device enter/keep in the active status.
-                    DPRINTF(VirtualDevice, "Virtual Device starts working.\n");
-                    
-                    /* 统计设备访问次数 */
-                    if (need_log)
-                    {
-                    	access_time++;
-                    	std::ofstream fout("m5out/devicedata");
-                    	assert(fout);
-                    	fout << access_time << std::endl;
-                    	fout.close();
-                  	}
+                    DPRINTF(VirtualDevice, "Virtual Device starts working.\n");                
                     
                     /* Set the virtual device to working mode */
                     *pmem |= VDEV_WORK;
                     *pmem &= ~VDEV_FINISH;
                     /* Schedule interrupt. */
+                    std::pair<double,double> time_energy = circnn.Run();
+                    delay_self = time_energy.first;
+                    energy_need = time_energy.second;
                     schedule(event_interrupt, curTick() + delay_set + delay_self);
                     /* Energy consumption. */
                     DPRINTF(VirtualDevice, "Need Ticks:%i, Cycles:%i, Energy: %lf .\n", 
-                    	delay_recover + delay_self, 
-                    	ticksToCycles(delay_recover + delay_self), 
-                    	energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_recover + delay_self)
+                    	delay_self, 
+                    	ticksToCycles(delay_self), 
+                    	time_energy.second
                     );
-                    consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_recover + delay_self));
+                    consumeEnergy(energy_need);
                     cpu->virtualDeviceSet(delay_set);
                     cpu->virtualDeviceStart(id);
                 }
@@ -200,88 +217,32 @@ VirtualDevice::tick()
     //schedule(tickEvent, curTick() + 1);
 }
 
-//int
-//VirtualDevice::handleMsg(const EnergyMsg &msg)
-//{
-//    DPRINTF(EnergyMgmt, "Device handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
-//    switch(msg.type) {
-//        case (int) SimpleEnergySM::POWEROFF:
-//            /** Vdev shutdown **/
-//            execution_state = STATE_POWEROFF;
-//            if (*pmem & VDEV_WORK) {
-//                /* This should be handled if the device is on a task **/
-//                assert(event_interrupt.scheduled());
-//                DPRINTF(VirtualDevice, "device power off occurs in the middle of a task at %lu\n", curTick());
-//
-//                /* Calculate the remaining delay if the device is interruptable */
-//                if (is_interruptable)
-//                    delay_remained = event_interrupt.when() - curTick();
-//                else
-//                    delay_remained = delay_set + delay_self;
-//                deschedule(event_interrupt);
-//            }
-//            break;
-//        case (int) SimpleEnergySM::POWERON:
-//            /** Vdev shutdown **/
-//            execution_state = STATE_ACTIVE;
-//            if (*pmem & VDEV_WORK) {
-//                assert(!event_interrupt.scheduled());
-//                DPRINTF(VirtualDevice, "device power on to finish a task at %lu\n", curTick());
-//                schedule(event_interrupt, curTick() + delay_remained);
-//                /** Energy consumption **/
-//                consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
-//            }
-//            break;
-//        default:
-//            return 0;
-//    }
-//    return 1;
-//}
 
 int
 VirtualDevice::handleMsg(const EnergyMsg &msg)
 {
     DPRINTF(EnergyMgmt, "Device handleMsg called at %lu, msg.type=%d\n", curTick(), msg.type);
     switch(msg.type) {
-    		case (int) DFS_LRY::MsgType::RETENTION_BEG:
-    				//进入RETENTION状态，事实上要做的就是POWEROFF要做的事
-    				//因为RETENTION和POWEROFF最大的区别只是开机没惩罚而已
-    				execution_state = STATE_POWEROFF;
-    				if (*pmem & VDEV_WORK) {
-                /* This should be handled if the device is on a task **/
-                assert(event_interrupt.scheduled());
-                DPRINTF(VirtualDevice, "device retention occurs in the middle of a task at %lu\n", curTick());
-
-                /* Calculate the remaining delay*/
-                delay_remained = event_interrupt.when() - curTick();
-                deschedule(event_interrupt);
-            }
-    				break;
-        case (int) DFS_LRY::MsgType::POWEROFF:
-            /** Vdev shutdown **/           
+        case (int) TwoThresSM::MsgType::POWEROFF:
+            /** Vdev shutdown **/   
+            execution_state = STATE_POWEROFF;        
             /* Re-calculate the delay if the device is interruptable */
             if (*pmem & VDEV_WORK) 
             {
+            	/* This should be handled if the device is on a task **/
+              assert(event_interrupt.scheduled());
             	DPRINTF(VirtualDevice, "device power off occurs in the middle of a task at %lu\n", curTick());
+	            /* Calculate the remaining delay*/
+              delay_remained = event_interrupt.when() - curTick();
+              deschedule(event_interrupt);
 	            if (!is_interruptable)
 	            {
-	            	delay_remained = delay_set + delay_self;
+	            	delay_remained = delay_recover + delay_self;
 	            }
          		}
             break;
-        case (int) DFS_LRY::MsgType::RETENTION_END:
-    				//从RETENTION状态恢复工作
-    				execution_state = STATE_IDLE;
-    				if (*pmem & VDEV_WORK) 
-    				{
-    						execution_state = STATE_ACTIVE;
-                assert(!event_interrupt.scheduled());
-                DPRINTF(VirtualDevice, "device recover from retention to finish a task at %lu\n", curTick());
-                schedule(event_interrupt, curTick() + delay_remained);
-            }
-            break;
-        case (int) DFS_LRY::MsgType::POWERON:
-            /** Vdev shutdown **/
+        case (int) TwoThresSM::MsgType::POWERON:
+            /** Vdev poweron **/
             execution_state = STATE_IDLE;
             if (*pmem & VDEV_WORK) {
             		execution_state = STATE_ACTIVE;
@@ -289,7 +250,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
                 DPRINTF(VirtualDevice, "device power on to finish a task at %lu\n", curTick());
                 schedule(event_interrupt, curTick() + delay_remained);
                 /** Energy consumption **/
-                consumeEnergy(energy_consumed_per_cycle_vdev[STATE_ACTIVE] * ticksToCycles(delay_remained));
+                consumeEnergy(energy_need);
             }
             break;
         default:

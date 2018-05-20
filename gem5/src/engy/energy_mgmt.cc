@@ -10,14 +10,8 @@
 #include "sim/eventq.hh"
 #include "engy/DFS_LRY.hh"
 
-//这个全局变量用于通知energy_mgmt现在系统的状态
-//不知道为啥energy_mgmt收不到msg，所以只能将就这么搞了
-//这个变量的本体是在DFS_LRY.cc中定义的
-extern bool DFS_LRY_poweron_dirty_patch;
-
 EnergyMgmt::EnergyMgmt(const Params *p)
         : SimObject(p),
-        	energy_consumed_per_harvest(p->energy_consumed_per_harvest),
         	energy_profile_mult(p->energy_profile_mult),
           time_unit(p->energy_time_unit),
           energy_remained(0),
@@ -77,12 +71,6 @@ int EnergyMgmt::consumeEnergy(double val)
     		
         energy_remained = harvest_module->energy_harvest(-val, energy_remained);
         harv_unit = -val;
-        if(DFS_LRY_poweron_dirty_patch)
-        {
-		        //energy leakage!
-		        DPRINTF(EnergyMgmt, "Leakage: %lf\n", energy_consumed_per_harvest);
-		        energy_remained -= energy_consumed_per_harvest;
-      	}
         if (energy_remained > higher_bound) {
             harv_unit -= (energy_remained - higher_bound);
             energy_remained = higher_bound;
