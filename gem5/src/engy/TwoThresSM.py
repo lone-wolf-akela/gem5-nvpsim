@@ -8,3 +8,5 @@ class TwoThresSM(BaseEnergySM):
     cxx_header = "engy/two_thres.hh"
     thres_high = Param.Float(Parent.thres_high, "high threshold of energy state machine")
     thres_low = Param.Float(Parent.thres_low, "low threshold of energy state machine")
+    thres_vdevHigh = Param.Float(Parent.thres_vdevHigh, "low threshold of vdev energy state machine")
+    thres_vdevLow = Param.Float(Parent.thres_enterLow, "low threshold of vdev energy state machine")

@@ -69,6 +69,8 @@
 using namespace std;
 using namespace TheISA;
 
+extern int Temp_Workaround_Vdev_State;
+
 AtomicSimpleCPU::TickEvent::TickEvent(AtomicSimpleCPU *c)
     : Event(CPU_Tick_Pri), cpu(c)
 {
@@ -241,6 +243,11 @@ AtomicSimpleCPU::verifyMemoryMode() const
 void
 AtomicSimpleCPU::activateContext(ThreadID thread_num)
 {
+		if(Temp_Workaround_Vdev_State)
+			clkmult = 1;
+		else
+			clkmult = 10;
+	
     DPRINTF(SimpleCPU, "ActivateContext %d\n", thread_num);
 
     assert(thread_num == 0);
@@ -523,6 +530,11 @@ AtomicSimpleCPU::writeMem(uint8_t *data, unsigned size,
 void
 AtomicSimpleCPU::tick()
 {
+		if(Temp_Workaround_Vdev_State)
+			clkmult = 1;
+		else
+			clkmult = 10;
+	
     DPRINTF(SimpleCPU, "Tick\n");
 
     in_interrupt = 0;
@@ -641,8 +653,9 @@ AtomicSimpleCPU::tick()
     if (latency < clockPeriod())
         latency = clockPeriod();
 
-    consumeEnergy(energy_consumed_per_cycle * ticksToCycles(latency));
-
+    //consumeEnergy(energy_consumed_per_cycle * ticksToCycles(latency) * (double(Temp_Workaround_Vdev_State) + 0.01)/1.01);
+		consumeEnergy(energy_consumed_per_cycle * ticksToCycles(latency));
+		
     if (_status != Idle)
         schedule(tickEvent, curTick() + latency);
 }
@@ -736,6 +749,12 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 int
 AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 {
+		//调整频率
+		if(Temp_Workaround_Vdev_State)
+			clkmult = 1;
+		else
+			clkmult = 10;
+            	
 	  int rlt = 1;
     Tick lat = 0;
     //const int CPU_Power = 0.160;
@@ -761,8 +780,6 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
         case (int) TwoThresSM::MsgType::POWERON:
         	  //开机，进入Freq Lv1
         	  DPRINTF(EnergyMgmt, "[AtomicSimpleCPU-DFS_LRY] power on\n");
-        	  //调整频率
-            clkmult = 1;
         	  //调整耗能
             //energy_consumed_per_cycle = energy_consumed_per_cycle_1;
             //开机惩罚耗能
@@ -790,6 +807,11 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 int
 AtomicSimpleCPU::virtualDeviceDelay(Tick tick)
 {
+		if(Temp_Workaround_Vdev_State)
+			clkmult = 1;
+		else
+			clkmult = 10;
+	
     int rlt = 1;
     Tick time = tickEvent.when();
     if (tick % clockPeriod())

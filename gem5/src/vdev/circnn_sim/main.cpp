@@ -15,6 +15,16 @@ int rightshift, bias_size;
 				
 std::pair<double,double> CirCNN::Run()
 {
+	if(state == HighEnergy)
+	{
+		cycleLen = cycleLenHigh;
+	}
+	else 
+	{
+		cycleLen = cycleLenLow;
+	}
+	
+	
 	double timeused = 1, energyused = 1;
 	
 	int batch, ins, layer;

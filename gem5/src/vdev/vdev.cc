@@ -10,7 +10,7 @@
 //#include "engy/DVFS.hh"
 #include "engy/two_thres.hh"
 
-//#include <fstream>
+extern int Temp_Workaround_Vdev_State;
 
 VirtualDevice::DevicePort::DevicePort(const std::string &_name, VirtualDevice *_vdev)
     : SlavePort(_name, _vdev), vdev(_vdev)
@@ -124,6 +124,7 @@ VirtualDevice::triggerInterrupt()
 	  else //not finished, run next inst
 	  {
 	  	/* Schedule interrupt. */
+	  	circnn.state = Temp_Workaround_Vdev_State ? CirCNN::State::HighEnergy : CirCNN::State::LowEnergy;
       std::pair<double,double> time_energy = circnn.Run();
       delay_self = time_energy.first;
       energy_need = time_energy.second;
@@ -165,6 +166,7 @@ VirtualDevice::access(PacketPtr pkt)
                     *pmem |= VDEV_WORK;
                     *pmem &= ~VDEV_FINISH;
                     /* Schedule interrupt. */
+                    circnn.state = Temp_Workaround_Vdev_State ? CirCNN::State::HighEnergy : CirCNN::State::LowEnergy;
                     std::pair<double,double> time_energy = circnn.Run();
                     delay_self = time_energy.first;
                     energy_need = time_energy.second;
@@ -253,6 +255,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
                 if(!is_interruptable)
                 {               	
                 	circnn.Rewind();
+                	circnn.state = Temp_Workaround_Vdev_State ? CirCNN::State::HighEnergy : CirCNN::State::LowEnergy;
                 	std::pair<double,double> time_energy = circnn.Run();
                   delay_self = time_energy.first;
                   energy_need = time_energy.second;

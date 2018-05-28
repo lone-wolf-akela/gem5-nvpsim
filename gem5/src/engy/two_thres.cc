@@ -5,9 +5,12 @@
 #include "two_thres.hh"
 #include "debug/EnergyMgmt.hh"
 
+int Temp_Workaround_Vdev_State = 0;
+
 TwoThresSM::TwoThresSM(const Params *p)
     : BaseEnergySM(p), state(TwoThresSM::State::STATE_INIT),
-      thres_high(p->thres_high), thres_low(p->thres_low)
+      thres_high(p->thres_high), thres_low(p->thres_low),
+      thres_vdevHigh(p->thres_vdevHigh), thres_vdevLow(p->thres_vdevLow)
 {
 
 }
@@ -40,6 +43,17 @@ void TwoThresSM::update(double _energy)
         broadcastMsg(msg);
     }
 
+
+		if(state == STATE_POWERON && _energy > thres_vdevHigh)
+		{
+			DPRINTF(EnergyMgmt, "[TwoThresSM] vdev state high");
+			Temp_Workaround_Vdev_State = 1;
+		}
+		if(state == STATE_POWERON && _energy < thres_vdevLow) 
+		{
+			DPRINTF(EnergyMgmt, "[TwoThresSM] vdev state low");
+			Temp_Workaround_Vdev_State = 0;
+		}
 }
 
 TwoThresSM *

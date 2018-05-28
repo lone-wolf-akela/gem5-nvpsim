@@ -30,7 +30,8 @@ system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/Solar2.txt', ener
 system.energy_mgmt.state_machine = TwoThresSM()
 system.energy_mgmt.state_machine.thres_high = 500
 system.energy_mgmt.state_machine.thres_low = 30
-
+system.energy_mgmt.state_machine.thres_vdevHigh = 500
+system.energy_mgmt.state_machine.thres_vdevLow = 400
 
 system.energy_mgmt.capacity = cap;	#uF
 system.energy_mgmt.energy_profile_mult = profilemult; 

@@ -38,6 +38,8 @@ protected:
     State state;
     double thres_high;
     double thres_low;
+    double thres_vdevHigh;
+    double thres_vdevLow;
 
 };
 #endif //GEM5_TWO_THRES_HH
