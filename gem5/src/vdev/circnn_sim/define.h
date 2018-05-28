@@ -35,6 +35,7 @@ public:
 
 constexpr int NUM_LEN = 12;
 constexpr int NUM_FRAC_BITS = 4;
+constexpr int WNUM_FRAC_BITS = 7;
 
 #define IN
 #define OUT

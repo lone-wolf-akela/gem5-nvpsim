@@ -9,7 +9,7 @@
 #include "w3.h"
 #include "b3.h"
 
-#define BATCH 62
+#define BATCH 62 //62
 
 int main()
 {

@@ -65,7 +65,7 @@ VirtualDevice::VirtualDevice(const Params *p)
       range(p->range),
       delay_set(p->delay_set),
       //delay_self(p->delay_self),
-      //delay_recover(p->delay_recover),
+      delay_recover(p->delay_recover),
       delay_cpu_interrupt(p->delay_cpu_interrupt),
       is_interruptable(p->is_interruptable),
       //delay_remained(p->delay_remained + p->delay_recover),
@@ -134,6 +134,7 @@ VirtualDevice::triggerInterrupt()
       	ticksToCycles(delay_self), 
       	time_energy.second
       );
+      DPRINTF(VirtualDevice, "[VirtualDevice] Energy %lf is consumed.\n", energy_need);
       consumeEnergy(energy_need);
 	  }
 }
@@ -174,6 +175,7 @@ VirtualDevice::access(PacketPtr pkt)
                     	ticksToCycles(delay_self), 
                     	time_energy.second
                     );
+                    DPRINTF(VirtualDevice, "[VirtualDevice] Energy %lf is consumed.\n", energy_need);
                     consumeEnergy(energy_need);
                     cpu->virtualDeviceSet(delay_set);
                     cpu->virtualDeviceStart(id);
@@ -248,8 +250,18 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
             		execution_state = STATE_ACTIVE;
                 assert(!event_interrupt.scheduled());
                 DPRINTF(VirtualDevice, "device power on to finish a task at %lu\n", curTick());
+                if(!is_interruptable)
+                {               	
+                	circnn.Rewind();
+                	std::pair<double,double> time_energy = circnn.Run();
+                  delay_self = time_energy.first;
+                  energy_need = time_energy.second;
+                  DPRINTF(VirtualDevice, "device rewind. Need Time: %lf\n", time_energy.first);
+                  delay_remained = delay_recover + delay_self;
+                }
                 schedule(event_interrupt, curTick() + delay_remained);
                 /** Energy consumption **/
+                DPRINTF(VirtualDevice, "[VirtualDevice] Energy %lf is consumed.\n", energy_need);
                 consumeEnergy(energy_need);
             }
             break;

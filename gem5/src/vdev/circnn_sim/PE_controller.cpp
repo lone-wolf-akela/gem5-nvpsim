@@ -117,9 +117,17 @@ void PE_controller::run()
 
 		//计算期间mac_en始终为true
 		mac_en = true;
-
-		OUT FFTw_addr = decltype(FFTw_addr)::ValueType(FFTw_addr_next);
-		FFTw_addr_next++;
+		if (cycle_current == 0)
+		{
+			OUT FFTw_addr = decltype(FFTw_addr)::ValueType(FFTw_addr_next);
+			FFTw_addr_next += NUM_LEN;
+		}
+		else
+		{
+			OUT FFTw_addr = FFTw_addr.getRaw() + 1;
+		}
+		//OUT FFTw_addr = decltype(FFTw_addr)::ValueType(FFTw_addr_next);
+		//FFTw_addr_next++;
 	}
 	else
 	{

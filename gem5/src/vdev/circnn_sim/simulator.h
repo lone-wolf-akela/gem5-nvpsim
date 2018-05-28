@@ -13,7 +13,7 @@ class Simulator
 public:
 	Simulator();
 
-	void FFT(
+	int FFT(
 		std::string logfile,
 		bool FFTx_choose, 
 		bool tf_en, 
@@ -23,7 +23,7 @@ public:
 	);
 
 	//每个指令会算四组数各自的1/4part，要四次指令才能完整的进行四组数的运算
-	void PE(
+	int PE(
 		std::string logfile,
 		int FFTx_addr_inst,					//inst结尾的参数是写进data_rom里的
 		int FFTw_addr,
@@ -32,7 +32,7 @@ public:
 		int FFTx_addr_numberStep = NUM_LEN	//这个参数反应实际硬件上的FFTx中会被同时取出的四组数
 											//在模拟器的FFTx地址空间中的距离
 	);
-	void Parameter(
+	int Parameter(
 		bool fft,
 
 		int batch_num,
@@ -46,16 +46,16 @@ public:
 		int FFTx_addr_step_inst,
 		int FFTx_addr_step_sim
 	);
-	void Output_PE(int x_addr, int part, int rightshift);
-	void Output_IFFT(int x_addr, int FFTx_addr, int batch_num, int rightshift);
-	void Bias_Relu(
+	int Output_PE(int x_addr, int part, int rightshift);
+	int Output_IFFT(int x_addr, int FFTx_addr, int batch_num, int rightshift);
+	int Bias_Relu(
 		int x_addr, 
 		int FFTw_addr_sim, 
 		int bias_size, 
 		int batch_num
 	);
 	void NoOP();
-	void Mem_in(int batchBegin, int batchNum, int layer);
+	int Mem_in(int batchBegin, int batchNum, int layer);
 	void GenerateRom(const std::string& file);
 	void Debug_WriteLayer(const std::string& file);
 	std::array<std::array<double, 64>, 8> GetLayer3();

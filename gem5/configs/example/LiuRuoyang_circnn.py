@@ -6,8 +6,8 @@ from m5.objects import *
 #	os.remove("m5out/devicedata")
 
 import sys  
-cap = 100
-profilemult = 10
+cap = 20
+profilemult = 0.5
 
 #ticks_per_sec = 1000000000000
 #max_sec = 100
@@ -26,10 +26,10 @@ system.vaddr_vdev_ranges = [AddrRange('1000MB', '1001MB')]#, AddrRange('1001MB',
 ###
 
 #energy mgmt
-system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/powerofficeuw1e4.txt', energy_time_unit = '10us')
+system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/Solar2.txt', energy_time_unit = '100us')
 system.energy_mgmt.state_machine = TwoThresSM()
-system.energy_mgmt.state_machine.thres_high = 10
-system.energy_mgmt.state_machine.thres_low = 5
+system.energy_mgmt.state_machine.thres_high = 500
+system.energy_mgmt.state_machine.thres_low = 30
 
 
 system.energy_mgmt.capacity = cap;	#uF
@@ -38,7 +38,7 @@ system.energy_mgmt.energy_profile_mult = profilemult;
 
 #set some parameters for the CPU
 system.cpu = AtomicSimpleCPU(energy_consumed_per_cycle = 1,
-                             energy_consumed_poweroff = 10,
+                             energy_consumed_poweroff = 20,
                              energy_consumed_poweron = 50,  
                              clockPeriod_to_poweron = 10,
 	  													)
@@ -61,11 +61,11 @@ system.system_port = system.membus.slave
 system.vdev1 = VirtualDevice()
 system.vdev1.cpu = system.cpu
 system.vdev1.range = system.vdev_ranges[0]
-system.vdev1.energy_consumed_per_cycle_vdev = 1
+#system.vdev1.energy_consumed_per_cycle_vdev = 1
 #system.vdev1.delay_self = '10ms'
-system.vdev1.delay_cpu_interrupt = '100us'
-system.vdev1.delay_set = '2200us'
-system.vdev1.delay_recover = '920us'
+system.vdev1.delay_cpu_interrupt = '10us'
+system.vdev1.delay_set = '10us'
+system.vdev1.delay_recover = '10us'
 system.vdev1.is_interruptable = 0
 system.vdev1.port = system.membus.master
 system.vdev1.s_energy_port = system.energy_mgmt.m_energy_port

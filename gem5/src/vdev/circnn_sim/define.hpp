@@ -101,7 +101,14 @@ Num<BitNum> Num<BitNum>::signKeepAdd(const Num<BitNum>& num, const int& rightShi
 template <int BitNum>
 Num<BitNum> Num<BitNum>::operator-() const
 {
-	return Num<BitNum>(-_value);
+	if(-_value == (1 << (BitNum - 1)))
+	{
+		return Num<BitNum>((1 << (BitNum - 1))-1);
+	}
+	else
+	{
+		return Num<BitNum>(-_value);
+	}
 }
 
 template <int BitNum>

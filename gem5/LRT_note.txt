@@ -1,0 +1,3 @@
+scons -j3 build/ARM/gem5.debug
+
+build/ARM/gem5.debug configs/example/LiuRuoyang_circnn.py

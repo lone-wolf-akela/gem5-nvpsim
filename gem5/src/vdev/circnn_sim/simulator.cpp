@@ -11,7 +11,7 @@ Simulator::Simulator()
 	}
 }
 
-void Simulator::FFT(
+int Simulator::FFT(
 	std::string logfile, 
 	bool FFTx_choose,
 	bool tf_en, 
@@ -20,6 +20,8 @@ void Simulator::FFT(
 	int FFTx_addr
 )
 {
+	int cycles = 0;
+	
 	mem_hub.inst_sram.emplace_back();
 	mem_hub.inst_sram.back().setBit(31, 28, 1); //FFT
 	mem_hub.inst_sram.back().setBit(27, FFTx_choose); //FFTx_choose?
@@ -34,7 +36,7 @@ void Simulator::FFT(
 		assert(logfile == "" && "tf_en instruction cannot be used with log file" );
 		NoOP();
 		NoOP();
-		return;
+		return 1;
 	}
 
 	for (size_t i = 0; i < fft_index.size(); i++)
@@ -106,6 +108,8 @@ void Simulator::FFT(
 
 	while (!fft_controller.FFT_ctrl_done || first)
 	{
+		cycles++;
+		
 		first = false;
 
 		//run fft	
@@ -207,9 +211,11 @@ void Simulator::FFT(
 
 	NoOP();
 	NoOP();
+	
+	return cycles;
 }
 
-void Simulator::PE(
+int Simulator::PE(
 	std::string logfile,
 	int FFTx_addr_inst,					//inst结尾的参数是写进data_rom里的
 	int FFTw_addr,
@@ -219,6 +225,8 @@ void Simulator::PE(
 										//在模拟器的FFTx地址空间中的距离
 )
 {
+	int cycles = 0;
+	
 	assert(FFTx_part >= 0);
 	assert(FFTx_part < 4);
 
@@ -241,6 +249,8 @@ void Simulator::PE(
 	bool first = true;
 	while (!pe_controller.PE_ctrl_done || first)
 	{
+		cycles++;
+		
 		first = false;
 		pe_controller.run();
 
@@ -256,19 +266,57 @@ void Simulator::PE(
 			{
 				for (int j = 0; j < 16; j++)
 				{
+					//符号位
+					if (pe_controller.cycle_current == 0)
+					{
+						pe_array.activ_re[i][j] = 0;
+						pe_array.activ_im[i][j] = 0;
+						for(int bit = pe_controller.bit_num.getRaw()+1;
+							bit<NUM_LEN;
+							bit++)
+						{
+							
+							pe_array.activ_re[i][j].setBit(
+								bit,
+								mem_hub.FFTx_sram[
+									pe_controller.FFTx_addr.getRaw() + FFTx_addr_numberStep * i]
+								[FFTx_part * 32 + j]
+									);						
+							pe_array.activ_im[i][j].setBit(
+								bit,
+								mem_hub.FFTx_sram[
+									pe_controller.FFTx_addr.getRaw() + FFTx_addr_numberStep * i]
+								[FFTx_part * 32 + j + 16]
+									);
+						}
+					}
 					pe_array.activ_re[i][j].setBit(
-						NUM_LEN - 1 - pe_controller.cycle_current,
+						pe_controller.bit_num.getRaw() - pe_controller.cycle_current,
 						mem_hub.FFTx_sram[
 							pe_controller.FFTx_addr.getRaw() + FFTx_addr_numberStep * i]
 						[FFTx_part * 32 + j]
 							);
 
 					pe_array.activ_im[i][j].setBit(
-						NUM_LEN - 1 - pe_controller.cycle_current,
+						pe_controller.bit_num.getRaw() - pe_controller.cycle_current,
 						mem_hub.FFTx_sram[
 							pe_controller.FFTx_addr.getRaw() + FFTx_addr_numberStep * i]
 						[FFTx_part * 32 + j + 16]
 							);
+
+					if(false)
+					{
+						const int dropbits[] = { 8,10,11,13,14,15,16,17,18,
+						20,21,22,23,24,25,26,27,28,30,31,32}; // 0 to 32
+						for (const auto dropbit : dropbits)
+						{
+							if (FFTx_part * 16 + j == dropbit || FFTx_part * 16 + j == 64 - dropbit)
+							{
+								pe_array.activ_re[i][j] = 0;
+								pe_array.activ_im[i][j] = 0;
+							}
+						}
+					}
 				}
 			}
 		}
@@ -400,9 +448,11 @@ void Simulator::PE(
 
 	NoOP();
 	NoOP();
+	
+	return cycles;
 }
 
-void Simulator::Parameter(
+int Simulator::Parameter(
 	bool fft,
 
 	int batch_num,
@@ -482,10 +532,14 @@ void Simulator::Parameter(
 		pe_controller.FFTx_addr_step = FFTx_addr_step_sim;
 	}
 	mem_hub.inst_sram.push_back(inst);
+	
+	return 0;
 }
 
-void Simulator::Output_PE(int x_addr, int part, int rightshift)
+int Simulator::Output_PE(int x_addr, int part, int rightshift)
 {
+	int cycles = 16 * NUM_LEN;
+	
 	Inst<32> inst = 0;
 	//Output_ctrl  0011
 	inst.setBit(31, 27, 0b00110);
@@ -516,14 +570,16 @@ void Simulator::Output_PE(int x_addr, int part, int rightshift)
 			for (int index = 0; index < 16; index++)
 			{
 				//到底右移多少位？
-				const Num<NUM_LEN> re =
+				const Num<NUM_LEN> re(
 					pe_array.accu_result_out_re_full[input][w][index].getRawValue()
-					>> (NUM_FRAC_BITS+ rightshift);
+					>> (WNUM_FRAC_BITS + rightshift),
+					true);
 
 				//注意取共轭复数
-				const Num<NUM_LEN> im =
+				const Num<NUM_LEN> im(
 					-(pe_array.accu_result_out_im_full[input][w][index].getRawValue()
-						>> (NUM_FRAC_BITS+ rightshift));
+						>> (WNUM_FRAC_BITS + rightshift)),
+					true);
 
 				for (int bit = 0; bit < NUM_LEN; bit++)
 				{
@@ -539,10 +595,14 @@ void Simulator::Output_PE(int x_addr, int part, int rightshift)
 
 	NoOP();
 	NoOP();
+	
+	return cycles;
 }
 
-void Simulator::Output_IFFT(int x_addr, int FFTx_addr_sim, int batch_num, int rightshift)
+int Simulator::Output_IFFT(int x_addr, int FFTx_addr_sim, int batch_num, int rightshift)
 {
+	int cycles = 0;
+	
 	Inst<32> inst = 0;
 	//TODO:set inst
 	mem_hub.inst_sram.push_back(inst);
@@ -580,6 +640,8 @@ void Simulator::Output_IFFT(int x_addr, int FFTx_addr_sim, int batch_num, int ri
 
 		for(int bit=0;bit<NUM_LEN;bit++)
 		{
+			cycles++;
+			
 			for(int j=0;j<128;j++)
 			{
 				mem_hub.x_sram[x_addr + i * NUM_LEN + bit][j] =
@@ -592,10 +654,14 @@ void Simulator::Output_IFFT(int x_addr, int FFTx_addr_sim, int batch_num, int ri
 
 	NoOP();
 	NoOP();
+	
+	return cycles;
 }
 
-void Simulator::Bias_Relu(int x_addr, int FFTw_addr, int bias_size, int batch_num)
+int Simulator::Bias_Relu(int x_addr, int FFTw_addr, int bias_size, int batch_num)
 {
+	int cycles = bias_size/64 * batch_num * NUM_LEN;
+	
 	Inst<32> inst = 0;
 	//TODO:set inst
 	mem_hub.inst_sram.push_back(inst);
@@ -640,6 +706,8 @@ void Simulator::Bias_Relu(int x_addr, int FFTw_addr, int bias_size, int batch_nu
 
 	NoOP();
 	NoOP();
+	
+	return cycles;
 }
 
 void Simulator::NoOP()
@@ -647,7 +715,7 @@ void Simulator::NoOP()
 	mem_hub.inst_sram.emplace_back(0);
 }
 
-void Simulator::Mem_in(int batchBegin, int batchNum, int layer)
+int Simulator::Mem_in(int batchBegin, int batchNum, int layer)
 {
 	if (batchNum > 0)
 	{
@@ -661,6 +729,8 @@ void Simulator::Mem_in(int batchBegin, int batchNum, int layer)
 		layer == 2
 	);
 	mem_hub.readBiasInput("data/mnist/64bias/b" + std::to_string(layer) + ".txt");
+		
+	return 0;
 }
 
 void Simulator::GenerateRom(const std::string& file)

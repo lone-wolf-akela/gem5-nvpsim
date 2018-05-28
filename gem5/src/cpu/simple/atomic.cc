@@ -744,7 +744,7 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
     switch(msg.type){
         case (int) TwoThresSM::MsgType::POWEROFF:
         		//关机
-						DPRINTF(EnergyMgmt, "[AtomicSimpleCPU-DFS_LRY] handleMsg called at %lu, msg.type=%d. This is the initialization poweroff.\n", curTick(), msg.type);
+						DPRINTF(EnergyMgmt, "[AtomicSimpleCPU-DFS_LRY] power off\n");
 						lat = tickEvent.when() - curTick();           
             lat_poweron = lat + clockPeriod() - lat % clockPeriod();
             //关机惩罚耗能
@@ -760,6 +760,7 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
     				  
         case (int) TwoThresSM::MsgType::POWERON:
         	  //开机，进入Freq Lv1
+        	  DPRINTF(EnergyMgmt, "[AtomicSimpleCPU-DFS_LRY] power on\n");
         	  //调整频率
             clkmult = 1;
         	  //调整耗能

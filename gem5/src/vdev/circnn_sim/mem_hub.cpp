@@ -140,9 +140,9 @@ void Mem_hub::readWeightInput(
 					for (size_t k = part * 16; k < part * 16 + 16; k++)
 					{
 						const Num<NUM_LEN> tempR =
-							std::lround(weightR[i][j][k] * std::pow(2, NUM_FRAC_BITS));
+							std::lround(weightR[i][j][k] * std::pow(2, WNUM_FRAC_BITS));
 						const Num<NUM_LEN> tempI =
-							std::lround(weightI[i][j][k] * std::pow(2, NUM_FRAC_BITS));
+							std::lround(weightI[i][j][k] * std::pow(2, WNUM_FRAC_BITS));
 
 						for (int bit = 0; bit < NUM_LEN; bit++)
 						{
