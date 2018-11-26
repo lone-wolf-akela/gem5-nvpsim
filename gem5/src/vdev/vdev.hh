@@ -123,6 +123,8 @@ protected:
      * |-4 bits-|correct|finish|work|set| */
     uint8_t *pmem;
 
+		double totalTime = 0;
+		double totalEnergy = 0;
 };
 
 #endif //GEM5_VDEV_HH

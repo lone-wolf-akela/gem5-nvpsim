@@ -15,7 +15,9 @@ private:
 	
 	double cycleLen = 5000; //200MHz.
 	const double cycleLenHigh = 5000;
-	const double cycleLenLow = 1000000; //1MHz
+	const double cycleLenLow = 5000 * 20; //10MHz
+	
+	const double staticPowerRatio = 0.07294;
 	
 	const double energy_FFT = 394.72;	//pJ
 	const double energy_PE = 568.85;

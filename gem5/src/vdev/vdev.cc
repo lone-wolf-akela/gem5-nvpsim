@@ -128,6 +128,9 @@ VirtualDevice::triggerInterrupt()
       std::pair<double,double> time_energy = circnn.Run();
       delay_self = time_energy.first;
       energy_need = time_energy.second;
+      totalTime += delay_self;
+			totalEnergy += energy_need;
+			DPRINTF(VirtualDevice, "Inst total use: T: %lf E: %lf\n", totalTime, totalEnergy);
       schedule(event_interrupt, curTick() + delay_self);
       /* Energy consumption. */
       DPRINTF(VirtualDevice, "Next Inst, Need Ticks:%i, Cycles:%i, Energy: %lf .\n", 
@@ -170,6 +173,9 @@ VirtualDevice::access(PacketPtr pkt)
                     std::pair<double,double> time_energy = circnn.Run();
                     delay_self = time_energy.first;
                     energy_need = time_energy.second;
+                    totalTime += (delay_self + delay_set);
+										totalEnergy += energy_need;
+										DPRINTF(VirtualDevice, "Inst total use: T: %lf E: %lf\n", totalTime, totalEnergy);							
                     schedule(event_interrupt, curTick() + delay_set + delay_self);
                     /* Energy consumption. */
                     DPRINTF(VirtualDevice, "Need Ticks:%i, Cycles:%i, Energy: %lf .\n", 
@@ -229,6 +235,7 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
     switch(msg.type) {
         case (int) TwoThresSM::MsgType::POWEROFF:
             /** Vdev shutdown **/   
+            DPRINTF(VirtualDevice, "power-off msg\n");
             execution_state = STATE_POWEROFF;        
             /* Re-calculate the delay if the device is interruptable */
             if (*pmem & VDEV_WORK) 
@@ -259,6 +266,9 @@ VirtualDevice::handleMsg(const EnergyMsg &msg)
                 	std::pair<double,double> time_energy = circnn.Run();
                   delay_self = time_energy.first;
                   energy_need = time_energy.second;
+                  totalTime += (delay_self + delay_recover);
+									totalEnergy += energy_need;
+									DPRINTF(VirtualDevice, "Inst total use: T: %lf E: %lf\n", totalTime, totalEnergy);							
                   DPRINTF(VirtualDevice, "device rewind. Need Time: %lf\n", time_energy.first);
                   delay_remained = delay_recover + delay_self;
                 }

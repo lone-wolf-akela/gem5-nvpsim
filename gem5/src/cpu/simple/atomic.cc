@@ -246,7 +246,7 @@ AtomicSimpleCPU::activateContext(ThreadID thread_num)
 		if(Temp_Workaround_Vdev_State)
 			clkmult = 1;
 		else
-			clkmult = 10;
+			clkmult = 20;
 	
     DPRINTF(SimpleCPU, "ActivateContext %d\n", thread_num);
 
@@ -533,7 +533,7 @@ AtomicSimpleCPU::tick()
 		if(Temp_Workaround_Vdev_State)
 			clkmult = 1;
 		else
-			clkmult = 10;
+			clkmult = 20;
 	
     DPRINTF(SimpleCPU, "Tick\n");
 
@@ -753,7 +753,7 @@ AtomicSimpleCPU::handleMsg(const EnergyMsg &msg)
 		if(Temp_Workaround_Vdev_State)
 			clkmult = 1;
 		else
-			clkmult = 10;
+			clkmult = 20;
             	
 	  int rlt = 1;
     Tick lat = 0;
@@ -810,7 +810,7 @@ AtomicSimpleCPU::virtualDeviceDelay(Tick tick)
 		if(Temp_Workaround_Vdev_State)
 			clkmult = 1;
 		else
-			clkmult = 10;
+			clkmult = 20;
 	
     int rlt = 1;
     Tick time = tickEvent.when();

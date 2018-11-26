@@ -1,3 +1,11 @@
 scons -j3 build/ARM/gem5.debug
+scons -j3 build/ARM/gem5.opt
 
 build/ARM/gem5.debug configs/example/LiuRuoyang_circnn.py
+build/ARM/gem5.debug configs/example/simple_cnn.py
+build/ARM/gem5.debug --debug-flags=VirtualDevice configs/example/simple_cnn.py
+
+877710000000
+877696000000
+
+540393930000000

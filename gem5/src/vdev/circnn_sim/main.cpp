@@ -344,6 +344,15 @@ std::pair<double,double> CirCNN::Run()
 		energyused += cycles * (energy_BiasReLU + energy_other) /1000.; //pJ->nJ
 	}
 	
+	if(state == HighEnergy)
+	{
+	}
+	else 
+	{
+		energyused = energyused * (1. + staticPowerRatio * (cycleLenLow/cycleLenHigh - 1));
+
+	}
+	
 	counter++;	
 	finished = (counter % 23 == 0) && (counter / 23 % 3 == 0);	//回到了第0层，说明算完了。
 	if(finished)
