@@ -26,7 +26,7 @@ system.vaddr_vdev_ranges = [AddrRange('1000MB', '1001MB')]#, AddrRange('1001MB',
 ###
 
 #energy mgmt
-system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/Solar2.txt', energy_time_unit = '100us')
+system.energy_mgmt = EnergyMgmt(path_energy_profile = 'profile/Solar.txt', energy_time_unit = '100us')
 system.energy_mgmt.state_machine = TwoThresSM()
 system.energy_mgmt.state_machine.thres_high = 500
 system.energy_mgmt.state_machine.thres_low = 30
